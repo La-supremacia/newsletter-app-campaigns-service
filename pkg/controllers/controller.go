@@ -57,8 +57,7 @@ func PostCreateCampaign(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
 // @Success      200  {object} models.EditCampaign_Response
-// @Router       /v1/campaign/id [PUT]
-
+// @Router       /v1/campaign/:id [PUT]
 func PutEditCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -89,5 +88,74 @@ func PutEditCampaign(c *fiber.Ctx) error {
 	}
 
 	fmt.Println("Successfully edited a Campaign", baseModel)
+	return c.Status(fiber.StatusOK).JSON(baseModel)
+}
+
+// DeleteCampaign func remove an existing campaign.
+// @Description  Remove an existing campaign associated, found by it's ID.
+// @Summary      Remove a campaign by it's ID
+// @Tags         Campaign
+// @Accept       json
+// @Produce      json
+// @Param        id   path   string  true  "Campaign ID"
+// @Success      200  {object} models.DeleteCampaign_Response
+// @Router       /v1/campaign/:id [DELETE]
+func DeleteRemoveCampaign(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	u := new(models.DeleteCampaign_Request)
+
+	if err := c.BodyParser(u); err != nil {
+		return err
+	}
+
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
+	}
+
+	baseModel := &models.Campaign{}
+	coll := mgm.Coll(baseModel)
+	err := coll.FindByID(id, baseModel)
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(err)
+	}
+
+	err = coll.Delete(baseModel)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+
+	return c.JSON(fiber.Map{
+		"sucess":  true,
+		"message": "The contact was successfully deleted",
+	})
+}
+
+// RetrieveCampaign func retrieve an existing campaign.
+// @Description  Lookup a campaign based on a given ID.
+// @Summary      Retrieve a campaign by it's ID
+// @Tags         Campaign
+// @Accept       json
+// @Produce      json
+// @Param        id   path   string  true  "Campaign ID"
+// @Success      200  {object} models.DeleteCampaign_Response
+// @Router       /v1/campaign/:id [GET]
+func GetRetrieveCampaign(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
+	}
+
+	baseModel := &models.Campaign{}
+	coll := mgm.Coll(baseModel)
+	err := coll.FindByID(id, baseModel)
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(err)
+	}
+
 	return c.Status(fiber.StatusOK).JSON(baseModel)
 }

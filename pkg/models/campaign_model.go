@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"github.com/kamva/mgm/v3"
 )
 
@@ -34,19 +32,15 @@ type EditCampaign_Request struct {
 	CronjobPattern string `db:"cronjob_pattern" json:"cronjob_pattern" bson:"cronjob_pattern" validate:""`
 }
 
-type DeleteOrganization_Request struct {
-	OrganizationId string `db:"organization_id" json:"organization_id" validate:""`
+type DeleteCampaign_Request struct {
+	CampaignID string `db:"campaign_id" json:"campaign_id" validate:""`
 }
 
-type GetOrganization_Response struct {
-	Id               string    `db:"_id" json:"_id" validate:""`
-	CreatedAt        time.Time `db:"created_at" json:"created_at" validate:"" bson:"created_at"`
-	UpdatedAt        time.Time `db:"updated_at" json:"updated_at" validate:""`
-	OrganizationName string    `db:"organization_name" json:"organization_name" validate:"required"`
-	UserId           string    `db:"user_id" json:"user_id" validate:"required"`
+type GetCampaign_Response struct {
+	CampaignID string `db:"campaign_id" json:"campaign_id" validate:""`
 }
 
-type DeleteOrganization_Response struct {
+type DeleteCampaign_Response struct {
 	Message string `db:"message" json:"message" validate:""`
 	Success bool   `db:"success" json:"success" validate:""`
 }
