@@ -159,3 +159,45 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(baseModel)
 }
+
+// PutAddContactToCampaign Add a contact to an existing campaign.
+// @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
+// @Summary      Push a contact to a campaign contacts field
+// @Tags         Campaign
+// @Accept       json
+// @Produce      json
+// @Param        id   path   string  true  "Campaign ID"
+// @Success      200  {object} models.EditCampaign_Response
+// @Router       /v1/campaign/:id [PUT]
+func AppendContactToCampaign(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	u := new(models.EditCampaign_Request)
+
+	if err := c.BodyParser(u); err != nil {
+		return err
+	}
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
+	}
+
+	baseModel := &models.Campaign{}
+	coll := mgm.Coll(baseModel)
+	err := coll.FindByID(id, baseModel)
+
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(err)
+	}
+
+	baseModel.CampaignName = u.CampaignName
+	baseModel.CronjobPattern = u.CronjobPattern
+
+	err = coll.Update(baseModel)
+
+	if err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(err)
+	}
+
+	fmt.Println("Successfully added a contact to a Campaign", baseModel)
+	return c.Status(fiber.StatusOK).JSON(baseModel)
+}
