@@ -92,7 +92,6 @@ func PutEditCampaign(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(baseModel)
 }
 
-/*
 // DeleteCampaign func remove an existing campaign.
 // @Description  Remove an existing campaign associated, found by it's ID.
 // @Summary      Remove a campaign by it's ID
@@ -100,16 +99,10 @@ func PutEditCampaign(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
-// @Success      200  {object} models.DeleteCampaign_Response
+// @Success      200
 // @Router       /v1/campaign/:id [DELETE]
 func DeleteRemoveCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
-
-	u := new(models.DeleteCampaign_Request)
-
-	if err := c.BodyParser(u); err != nil {
-		return err
-	}
 
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
@@ -131,10 +124,11 @@ func DeleteRemoveCampaign(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"sucess":  true,
-		"message": "The contact was successfully deleted",
+		"message": "The Campaign was successfully deleted",
 	})
 }
 
+/*
 // RetrieveCampaign func retrieve an existing campaign.
 // @Description  Lookup a campaign based on a given ID.
 // @Summary      Retrieve a campaign by it's ID

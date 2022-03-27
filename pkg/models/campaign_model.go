@@ -49,10 +49,6 @@ type AppendConcactToCampaign struct {
 	TemplateId     string `db:"template_id" json:"template_id" bson:"template_id" validate:""`
 }
 
-type DeleteCampaign_Request struct {
-	CampaignID string `db:"campaign_id" json:"campaign_id" validate:""`
-}
-
 type GetCampaign_Response struct {
 	CampaignID string `db:"campaign_id" json:"campaign_id" validate:""`
 }
