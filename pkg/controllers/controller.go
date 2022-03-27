@@ -163,7 +163,7 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
 // @Success      200  {object} models.EditCampaign_Response
-// @Router       /v1/campaign/:id [PUT]
+// @Router       /v1/campaign/:id [POST]
 func AppendContactToCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
 	u := new(models.Campaign_Pivot_Contact_Request)
@@ -179,8 +179,8 @@ func AppendContactToCampaign(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "a contact ID is required")
 	}
 
-	campaignModel := &models.Campaign_Pivot_Contact{}
-	coll := mgm.Coll(campaignModel)
+	pivotModel := &models.Campaign_Pivot_Contact{}
+	coll := mgm.Coll(pivotModel)
 	_, err := coll.UpdateOne(c.Context(), bson.M{"contact_id": u.ContactId, "campaign_id": id}, bson.D{
 		{Key: "$set", Value: bson.D{
 			bson.E{Key: "campaign_id", Value: id},
@@ -199,41 +199,32 @@ func AppendContactToCampaign(c *fiber.Ctx) error {
 	})
 }
 
-/*
-// PutAddContactToCampaign Add a contact to an existing campaign.
-// @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
-// @Summary      Push a contact to a campaign contacts field
+// RemoveContactFromCampaign remove a  an existing campaign.
+// @Description  Lookup a campaign by it's ID and remove a contact from the suscription list.
+// @Summary      Delete the relationship between a campaign and a contact
 // @Tags         Campaign
 // @Accept       json
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
 // @Success      200  {object} models.EditCampaign_Response
-// @Router       /v1/campaign/:id [PUT]
+// @Router       /v1/campaign/:id [DELETE]
 func RemoveContactFromCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
-	u := new(models.Campaign_Pivot_Contact_Request)
+	contactId := c.Params("contact")
 
-	if err := c.BodyParser(u); err != nil {
-		return err
-	}
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
 	}
-
-	campaignModel := &models.Campaign_Pivot_Contact{}
-	coll := mgm.Coll(campaignModel)
-	err := coll.First(bson.M{"contactId": u.ContactId}, campaignModel)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(err)
-
+	if contactId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a contact ID is required")
 	}
-	err = coll.Delete(campaignModel)
 
-	//responseOrganization := services.NewR("The organization was successfully deleted", true)
+	pivotModel := &models.Campaign_Pivot_Contact{}
+	coll := mgm.Coll(pivotModel)
+	coll.FindOneAndDelete(c.Context(), bson.M{"contact_id": contactId, "campaign_id": id})
 
-	return c.Status(fiber.StatusOK).JSON("The organization was successfully deleted")
-
-	fmt.Println("Successfully added a contact to a Campaign", campaignModel)
-	return c.Status(fiber.StatusOK).JSON(campaignModel.CampaignId)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"sucess":  true,
+		"message": "The contact was successfully removed from the campaign",
+	})
 }
-*/
