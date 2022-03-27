@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kamva/mgm/v3"
 	_ "github.com/swaggo/swag/example/celler/httputil"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type HTTPError struct {
@@ -17,13 +18,14 @@ type HTTPError struct {
 
 // PostCreateCampaign func creates a new campaign.
 // @Description  Create and associate a new campaign associated to an org by given params.
+// @Param Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Summary      Create a campaign and associate it to a given org
 // @Tags         Campaign
 // @Accept       json
 // @Produce      json
-// @Param        id   path   string  true  "Campaign ID"
+// @Param campaign body models.CreateCampaign_Request true "campaign info"
 // @Success      202  {object} models.CreateCampaign_Response
-// @Router       /v1/campaign/ [post]
+// @Router       /campaign/ [post]
 func PostCreateCampaign(c *fiber.Ctx) error {
 	u := new(models.CreateCampaign_Request)
 
@@ -38,15 +40,14 @@ func PostCreateCampaign(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "a organization id is required")
 	}
 
-	createdCampaign := services.New_Campaign(u.OrganizationId, u.CampaignName, u.Contacts)
+	createdCampaign := services.New_Campaign(u.OrganizationId, u.CampaignName, u.Description, u.TemplateId)
 	err := mgm.Coll(createdCampaign).Create(createdCampaign)
-	responseCampaign := services.New_CreateCampaign_Response(createdCampaign.ID.Hex(), createdCampaign.CampaignName)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
-	fmt.Println("Successfully created a new Campaign", responseCampaign)
-	return c.Status(fiber.StatusCreated).JSON(responseCampaign)
+	fmt.Println("Successfully created a new Campaign", err)
+	return c.Status(fiber.StatusCreated).JSON(createdCampaign)
 }
 
 // PutEditCampaign func edit an existing campaign.
@@ -79,7 +80,8 @@ func PutEditCampaign(c *fiber.Ctx) error {
 	}
 
 	baseModel.CampaignName = u.CampaignName
-	baseModel.CronjobPattern = u.CronjobPattern
+	baseModel.Description = u.Description
+	baseModel.TemplateId = u.TemplateId
 
 	err = coll.Update(baseModel)
 
@@ -98,16 +100,10 @@ func PutEditCampaign(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
-// @Success      200  {object} models.DeleteCampaign_Response
+// @Success      200
 // @Router       /v1/campaign/:id [DELETE]
 func DeleteRemoveCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
-
-	u := new(models.DeleteCampaign_Request)
-
-	if err := c.BodyParser(u); err != nil {
-		return err
-	}
 
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
@@ -129,7 +125,7 @@ func DeleteRemoveCampaign(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"sucess":  true,
-		"message": "The contact was successfully deleted",
+		"message": "The Campaign was successfully deleted",
 	})
 }
 
@@ -140,7 +136,7 @@ func DeleteRemoveCampaign(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
-// @Success      200  {object} models.DeleteCampaign_Response
+// @Success      200  {object} models.Campaign
 // @Router       /v1/campaign/:id [GET]
 func GetRetrieveCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
@@ -148,7 +144,6 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
 	}
-
 	baseModel := &models.Campaign{}
 	coll := mgm.Coll(baseModel)
 	err := coll.FindByID(id, baseModel)
@@ -162,7 +157,7 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 
 // PutAddContactToCampaign Add a contact to an existing campaign.
 // @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
-// @Summary      Push a contact to a campaign contacts field
+// @Summary      Create a relationship between a campaign and a contact
 // @Tags         Campaign
 // @Accept       json
 // @Produce      json
@@ -171,8 +166,52 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 // @Router       /v1/campaign/:id [PUT]
 func AppendContactToCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
+	u := new(models.Campaign_Pivot_Contact_Request)
 
-	u := new(models.EditCampaign_Request)
+	if err := c.BodyParser(u); err != nil {
+		return err
+	}
+
+	if id == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
+	}
+	if u.ContactId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a contact ID is required")
+	}
+
+	campaignModel := &models.Campaign_Pivot_Contact{}
+	coll := mgm.Coll(campaignModel)
+	_, err := coll.UpdateOne(c.Context(), bson.M{"contact_id": u.ContactId, "campaign_id": id}, bson.D{
+		{Key: "$set", Value: bson.D{
+			bson.E{Key: "campaign_id", Value: id},
+			bson.E{Key: "contact_id", Value: u.ContactId},
+		},
+		},
+	}, mgm.UpsertTrueOption())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+
+	fmt.Println("Successfully added a contact to a Campaign")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"sucess":  true,
+		"message": "The contact was successfully append to the campaign",
+	})
+}
+
+/*
+// PutAddContactToCampaign Add a contact to an existing campaign.
+// @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
+// @Summary      Push a contact to a campaign contacts field
+// @Tags         Campaign
+// @Accept       json
+// @Produce      json
+// @Param        id   path   string  true  "Campaign ID"
+// @Success      200  {object} models.EditCampaign_Response
+// @Router       /v1/campaign/:id [PUT]
+func RemoveContactFromCampaign(c *fiber.Ctx) error {
+	id := c.Params("id")
+	u := new(models.Campaign_Pivot_Contact_Request)
 
 	if err := c.BodyParser(u); err != nil {
 		return err
@@ -181,23 +220,20 @@ func AppendContactToCampaign(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
 	}
 
-	baseModel := &models.Campaign{}
-	coll := mgm.Coll(baseModel)
-	err := coll.FindByID(id, baseModel)
-
+	campaignModel := &models.Campaign_Pivot_Contact{}
+	coll := mgm.Coll(campaignModel)
+	err := coll.First(bson.M{"contactId": u.ContactId}, campaignModel)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(err)
+
 	}
+	err = coll.Delete(campaignModel)
 
-	baseModel.CampaignName = u.CampaignName
-	baseModel.CronjobPattern = u.CronjobPattern
+	//responseOrganization := services.NewR("The organization was successfully deleted", true)
 
-	err = coll.Update(baseModel)
+	return c.Status(fiber.StatusOK).JSON("The organization was successfully deleted")
 
-	if err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(err)
-	}
-
-	fmt.Println("Successfully added a contact to a Campaign", baseModel)
-	return c.Status(fiber.StatusOK).JSON(baseModel)
+	fmt.Println("Successfully added a contact to a Campaign", campaignModel)
+	return c.Status(fiber.StatusOK).JSON(campaignModel.CampaignId)
 }
+*/
