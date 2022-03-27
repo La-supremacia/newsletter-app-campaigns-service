@@ -171,11 +171,12 @@ func AppendContactToCampaign(c *fiber.Ctx) error {
 	if err := c.BodyParser(u); err != nil {
 		return err
 	}
+
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
 	}
 	if u.ContactId == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
+		return fiber.NewError(fiber.StatusBadRequest, "a contact ID is required")
 	}
 
 	campaignModel := &models.Campaign_Pivot_Contact{}
