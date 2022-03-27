@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kamva/mgm/v3"
 	_ "github.com/swaggo/swag/example/celler/httputil"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type HTTPError struct {
@@ -154,10 +155,9 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(baseModel)
 }
 
-/*
 // PutAddContactToCampaign Add a contact to an existing campaign.
 // @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
-// @Summary      Push a contact to a campaign contacts field
+// @Summary      Create a relationship between a campaign and a contact
 // @Tags         Campaign
 // @Accept       json
 // @Produce      json
@@ -174,22 +174,31 @@ func AppendContactToCampaign(c *fiber.Ctx) error {
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
 	}
+	if u.ContactId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
+	}
 
 	campaignModel := &models.Campaign_Pivot_Contact{}
 	coll := mgm.Coll(campaignModel)
-	err := coll.First(bson.M{"contactId": u.ContactId}, campaignModel)
+	_, err := coll.UpdateOne(c.Context(), bson.M{"contact_id": u.ContactId, "campaign_id": id}, bson.D{
+		{Key: "$set", Value: bson.D{
+			bson.E{Key: "campaign_id", Value: id},
+			bson.E{Key: "contact_id", Value: u.ContactId},
+		},
+		},
+	}, mgm.UpsertTrueOption())
 	if err != nil {
-		createdCampaignPivot := services.New_Campaign_Pivot_Contact(u.ContactId, u.CampaignId)
-		err = coll.Create(createdCampaignPivot)
-		responsePivot := services.New_CreateCampaign_Response(createdCampaignPivot.ContactId, createdCampaignPivot.CampaignId)
-
-		return c.Status(fiber.StatusOK).JSON(responsePivot)
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
 
-	fmt.Println("Successfully added a contact to a Campaign", campaignModel)
-	return c.Status(fiber.StatusOK).JSON(campaignModel.CampaignId)
+	fmt.Println("Successfully added a contact to a Campaign")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"sucess":  true,
+		"message": "The contact was successfully append to the campaign",
+	})
 }
 
+/*
 // PutAddContactToCampaign Add a contact to an existing campaign.
 // @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
 // @Summary      Push a contact to a campaign contacts field

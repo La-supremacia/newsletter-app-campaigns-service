@@ -17,14 +17,15 @@ func New_CreateCampaign_Response(campaignId string, campaignName string) *models
 		CampaignName: campaignName,
 	}
 }
-
-/*
 func New_Campaign_Pivot_Contact(contactId string, campaignId string) *models.Campaign_Pivot_Contact {
 	return &models.Campaign_Pivot_Contact{
 		ContactId:  contactId,
 		CampaignId: campaignId,
 	}
 }
+
+/*
+
 
 
 func New_Campaign_Pivot_Contact_Response(contactId string, campaignId string) *models.Campaign_Pivot_Contact {
