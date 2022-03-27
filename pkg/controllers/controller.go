@@ -128,7 +128,6 @@ func DeleteRemoveCampaign(c *fiber.Ctx) error {
 	})
 }
 
-/*
 // RetrieveCampaign func retrieve an existing campaign.
 // @Description  Lookup a campaign based on a given ID.
 // @Summary      Retrieve a campaign by it's ID
@@ -136,7 +135,7 @@ func DeleteRemoveCampaign(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        id   path   string  true  "Campaign ID"
-// @Success      200  {object} models.DeleteCampaign_Response
+// @Success      200  {object} models.Campaign
 // @Router       /v1/campaign/:id [GET]
 func GetRetrieveCampaign(c *fiber.Ctx) error {
 	id := c.Params("id")
@@ -144,7 +143,6 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 	if id == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "a campaign ID is required")
 	}
-
 	baseModel := &models.Campaign{}
 	coll := mgm.Coll(baseModel)
 	err := coll.FindByID(id, baseModel)
@@ -156,6 +154,7 @@ func GetRetrieveCampaign(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(baseModel)
 }
 
+/*
 // PutAddContactToCampaign Add a contact to an existing campaign.
 // @Description  Lookup a campaign by it's ID and append a contact to the suscription list.
 // @Summary      Push a contact to a campaign contacts field
