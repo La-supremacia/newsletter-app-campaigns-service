@@ -10,7 +10,7 @@ import (
 
 func Init() error {
 	mongoDBUri := os.Getenv("MONGODB_URI") //env.GoDotEnvVariable("MONGODB_URI")
-	err := mgm.SetDefaultConfig(nil, "campaings", options.Client().ApplyURI(mongoDBUri))
+	err := mgm.SetDefaultConfig(nil, "apps", options.Client().ApplyURI(mongoDBUri))
 	if err != nil {
 		return err
 	}
