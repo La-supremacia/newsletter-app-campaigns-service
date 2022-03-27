@@ -7,7 +7,7 @@ import (
 //Create campaign
 type Campaign struct {
 	mgm.DefaultModel `bson:",inline"`
-	CampaignName     string `db:"campaign_name" json:"campaign_name" validate:"required"`
+	CampaignName     string `db:"campaign_name" json:"campaign_name" bson:"campaign_name" validate:"required"`
 	OrganizationId   string `db:"organization_id" json:"organization_id" bson:"organization_id" validate:""`
 	Description      string `db:"description" json:"description" validate:"required"`
 	TemplateId       string `db:"template_id" json:"template_id" bson:"template_id" validate:""`

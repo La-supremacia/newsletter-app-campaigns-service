@@ -79,6 +79,8 @@ func PutEditCampaign(c *fiber.Ctx) error {
 	}
 
 	baseModel.CampaignName = u.CampaignName
+	baseModel.Description = u.Description
+	baseModel.TemplateId = u.TemplateId
 
 	err = coll.Update(baseModel)
 
