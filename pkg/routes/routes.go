@@ -14,10 +14,9 @@ func PublicRoutes(a *fiber.App) {
 	route.Get("/campaign/:id", controllers.GetRetrieveCampaign).Name("Retrieve Campaign By Id")
 	route.Post("/campaign/:id", controllers.AppendContactToCampaign).Name("Append a contact to a Campaign")
 	route.Delete("/campaign/:id/:contact", controllers.RemoveContactFromCampaign).Name("Remove a contact from a Campaign")
+	route.Get("/campaign/contact/:contact", controllers.RetrieveCampaignsOfContact).Name("Retrieve all campaigns from a contact")
 
 	/*
-			route.Get("/organization", controllers.GetRetrieveOrganizationbyUserId).Name("Retrieve Organization By User Id")
-		   	route.Post("/test", controllers.TestToken)
-		   	route.Get("/", controllers.GetRoutes)
+		route.Get("/", controllers.GetRoutes)
 	*/
 }

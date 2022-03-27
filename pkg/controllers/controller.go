@@ -9,6 +9,7 @@ import (
 	"github.com/kamva/mgm/v3"
 	_ "github.com/swaggo/swag/example/celler/httputil"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type HTTPError struct {
@@ -227,4 +228,45 @@ func RemoveContactFromCampaign(c *fiber.Ctx) error {
 		"sucess":  true,
 		"message": "The contact was successfully removed from the campaign",
 	})
+}
+
+func RetrieveCampaignsOfContact(c *fiber.Ctx) error {
+	contactId := c.Params("contact")
+	if contactId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "a contact ID is required")
+	}
+	campaignColl := mgm.Coll(&models.Campaign{})
+	matchStage := bson.D{bson.E{Key: "$match", Value: bson.D{bson.E{Key: "contact_id", Value: contactId}}}}
+	projectStage := bson.D{bson.E{Key: "$project", Value: bson.D{bson.E{Key: "campaign_id", Value: 1}}}}
+
+	pipeline := bson.A{
+		matchStage,
+		projectStage,
+	}
+	cur, err := mgm.Coll(&models.Campaign_Pivot_Contact{}).Aggregate(mgm.Ctx(), pipeline)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+	var results []bson.M
+
+	cur.All(c.Context(), &results)
+	oids := make([]primitive.ObjectID, len(results))
+	for i := range results {
+		mongoId := results[i]["campaign_id"]
+		oids[i], _ = primitive.ObjectIDFromHex(mongoId.(string))
+	}
+	query := bson.M{"_id": bson.M{"$in": oids}}
+	res, err := campaignColl.Find(c.Context(), query)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+
+	if len(results) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(make([]string, 0))
+	}
+
+	var found []bson.M
+	res.All(c.Context(), &found)
+	return c.Status(fiber.StatusOK).JSON(found)
 }
