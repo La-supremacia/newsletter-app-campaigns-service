@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kamva/mgm/v3"
 	_ "github.com/swaggo/swag/example/celler/httputil"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type HTTPError struct {
@@ -40,15 +39,14 @@ func PostCreateCampaign(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "a organization id is required")
 	}
 
-	createdCampaign := services.New_Campaign(u.OrganizationId, u.CampaignName, u.Description, u.CronjobPattern, u.TemplateId)
+	createdCampaign := services.New_Campaign(u.OrganizationId, u.CampaignName, u.Description, u.TemplateId)
 	err := mgm.Coll(createdCampaign).Create(createdCampaign)
-	responseCampaign := services.New_CreateCampaign_Response(createdCampaign.ID.Hex(), createdCampaign.CampaignName)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
-	fmt.Println("Successfully created a new Campaign", responseCampaign)
-	return c.Status(fiber.StatusCreated).JSON(responseCampaign)
+	fmt.Println("Successfully created a new Campaign", err)
+	return c.Status(fiber.StatusCreated).JSON(createdCampaign)
 }
 
 // PutEditCampaign func edit an existing campaign.
@@ -81,7 +79,6 @@ func PutEditCampaign(c *fiber.Ctx) error {
 	}
 
 	baseModel.CampaignName = u.CampaignName
-	baseModel.CronjobPattern = u.CronjobPattern
 
 	err = coll.Update(baseModel)
 
@@ -93,6 +90,7 @@ func PutEditCampaign(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(baseModel)
 }
 
+/*
 // DeleteCampaign func remove an existing campaign.
 // @Description  Remove an existing campaign associated, found by it's ID.
 // @Summary      Remove a campaign by it's ID
@@ -233,3 +231,4 @@ func RemoveContactFromCampaign(c *fiber.Ctx) error {
 	fmt.Println("Successfully added a contact to a Campaign", campaignModel)
 	return c.Status(fiber.StatusOK).JSON(campaignModel.CampaignId)
 }
+*/

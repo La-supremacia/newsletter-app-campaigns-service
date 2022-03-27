@@ -2,12 +2,11 @@ package services
 
 import "campaigns-service/pkg/models"
 
-func New_Campaign(organizationId string, campaignName string, description string, cronjobPattern string, templateId string) *models.Campaign {
+func New_Campaign(organizationId string, campaignName string, description string, templateId string) *models.Campaign {
 	return &models.Campaign{
 		CampaignName:   campaignName,
 		OrganizationId: organizationId,
 		Description:    description,
-		CronjobPattern: cronjobPattern,
 		TemplateId:     templateId,
 	}
 }
